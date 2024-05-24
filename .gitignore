@@ -62,5 +62,10 @@ var/
 logs/
 
 # Python venvs
-beeware-venv
-venv
+beeware-venv/
+.beeware-venv/
+venv/
+.venv/
+
+# A place to stuff temp stuff
+misc/

@@ -3,16 +3,16 @@
 project_name = "ICS Merger"
 bundle = "com.github.icsmerger"
 version = "0.0.1"
-url = "https://icsmerger.github.com/icsmerger"
+url = "https://github.com/kcoombs/icsmerger"
 license = "MIT license"
-author = "Jane Developer"
-author_email = "jane@icsmerger.github.com"
+author = "Kirk Coombs"
+author_email = "icsmerger@coombscloud.com"
 
 [tool.briefcase.app.icsmerger]
 formal_name = "ICS Merger"
-description = "My first application"
-long_description = """More details about the app should go here.
-"""
+description = "Merge iCalendar ics files"
+#long_description = """More details about the app should go here.
+#"""
 icon = "icons/icsmerger"
 sources = [
     "src/icsmerger",
@@ -25,6 +25,7 @@ requires = [
     "icalendar",
     "appdirs",
 ]
+
 test_requires = [
     "pytest",
 ]
