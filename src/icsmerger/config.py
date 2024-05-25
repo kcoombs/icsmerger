@@ -1,7 +1,8 @@
 import os
+import platform
+import subprocess
 import json
 from appdirs import user_data_dir
-#from tkinter import messagebox
 
 # Define application name and author for appdirs
 APP_NAME = "icsmerger"
@@ -20,7 +21,7 @@ def get_outdir():
     return os.path.join(config_dir, 'out.ics')
 
 # Load configuration from file
-def load_config(config_path):
+def load_config(main_window, config_path):
     try:
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
@@ -28,14 +29,28 @@ def load_config(config_path):
         else:
             return {}
     except Exception as e:
-#        messagebox.showerror("Error", f"Failed to load configuration file: {e}")
+        main_window.info_dialog("Error", f"Failed to load configuration file: {e}")
         return {}
 
 # Save configuration to file
-def save_config(config, config_path):
+def save_config(main_window, config, config_path):
     try:
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
     except Exception as e:
-        pass
-#        messagebox.showerror("Error", f"Failed to save configuration file: {e}")
+        main_window.info_dialog("Error", f"Failed to save configuration file: {e}")
+
+# Open the OUT file in the default application
+def open_output_file(main_window, file_path):
+    print("open_output_file\n")
+    try:
+        if platform.system() == 'Windows':
+            subprocess.call(f'start "" "{file_path}"', shell=True)
+        elif platform.system() == 'Darwin':  # macOS
+            subprocess.call(['open', file_path])
+        elif platform.system() == 'Linux':
+            subprocess.call(['xdg-open', file_path])
+        else:
+           main_window.info_dialog("Unsupported OS", "Your operating system is not supported for this operation.")
+    except Exception as e:
+        print(f"Error opening file: {e}")

@@ -4,7 +4,7 @@ from .ical import load_ics, get_event_set
 from .exclusions import load_exclusions
 
 # Load files and display information
-def load_files(ics1_path, ics2_path, exclusions_path, ics_text, excl_text):
+def load_files(main_window, ics1_path, ics2_path, exclusions_path, ics_text, excl_text):
     if ics1_path and not os.path.exists(ics1_path):
         ics_text.value += f"File not found (ICS1): {ics1_path}\n"
         return
@@ -21,8 +21,8 @@ def load_files(ics1_path, ics2_path, exclusions_path, ics_text, excl_text):
         ics_text.value += f"File not found (exclusion): {exclusions_path}\n"
         return
 
-    cal1 = load_ics(ics1_path) if ics1_path else Calendar()
-    cal2 = load_ics(ics2_path)
+    cal1 = load_ics(main_window, ics1_path) if ics1_path else Calendar()
+    cal2 = load_ics(main_window, ics2_path)
 
     if cal2 is None:
         return
@@ -53,11 +53,11 @@ def load_files(ics1_path, ics2_path, exclusions_path, ics_text, excl_text):
             ics_text.value += "\nWarning: ICS1 has events after the latest event in ICS2\n"
 
     # Load the exclusions
-    exclusions = load_exclusions(exclusions_path) if exclusions_path else []
+    exclusions = load_exclusions(main_window, exclusions_path) if exclusions_path else []
     if not exclusions_path:
         excl_text.value += "No EXCL file provided.\n\n"
     else:
-        exclusions = load_exclusions(exclusions_path)
+        exclusions = load_exclusions(main_window, exclusions_path)
         if exclusions:
             excl_text.value += f"EXCL contains {len(exclusions)} exclusions:\n\n"
             for excl in exclusions:

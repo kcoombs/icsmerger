@@ -1,8 +1,9 @@
 import os
 import asyncio
 import toga
+import toga.platform
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW, LEFT, RIGHT, CENTER
+from toga.style.pack import COLUMN, ROW, CENTER, BOLD
 from pathlib import Path
 from .descriptions import gui_descriptions
 from .merge import run_merge
@@ -12,23 +13,19 @@ from .config import save_config, load_config, get_appdir
 class ICSMerger(toga.App):
     def startup(self):
         # Initialize main window
-        self.main_window = toga.MainWindow(title=gui_descriptions["root_title"])
+        window_width, window_height = 750, 225
+        position_x, position_y = self.window_position(window_width, window_height)
+        self.main_window = toga.MainWindow("iCal Merger", resizable=False, size=(window_width, window_height), position = (position_x, position_y))
 
         # Load configuration
         self.config_path = get_appdir()
-        self.config = load_config(self.config_path)
+        self.config = load_config(self.main_window, self.config_path)
 
         # Dictionary to store full file paths
         self.file_paths = {}
 
         # Main layout box
-        main_box = toga.Box(
-            style=Pack(
-                direction=COLUMN, 
-                padding=10,
-                flex=1
-            )
-        )
+        main_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
 
         def create_file_selection_row(description_key, entry_key, entry_name):
             button_width = 60
@@ -69,11 +66,7 @@ class ICSMerger(toga.App):
                     style=Pack(padding=5, width=button_width)
                 )
 
-            row_box = toga.Box(style=Pack(
-                direction=ROW, 
-                padding=5, 
-                #flex=1
-                ))
+            row_box = toga.Box(style=Pack(direction=ROW, padding=5))
             row_box.add(description_button)
             row_box.add(label)
             row_box.add(entry)
@@ -106,12 +99,11 @@ class ICSMerger(toga.App):
             self.exclusions_entry.value = os.path.basename(self.config['exclusions_path'])
             self.file_paths['exclusions'] = Path(self.config['exclusions_path'])
 
-        # Create the button box
+        # Create the bottom button box
         button_box = toga.Box(style=Pack(
             direction=ROW, 
             padding=10, 
-            alignment=CENTER, 
-        #    flex=1
+            alignment=CENTER,
         ))       
         
         # Add buttons to the button box
@@ -140,11 +132,17 @@ class ICSMerger(toga.App):
         main_box.add(button_box)
 
         self.main_window.content = main_box
-        self.main_window.size = (750, 225)
+        # self.main_window.size = (750, 225)
         self.main_window.show()
 
         # Validate file entries
         self.validate_files()
+
+    def window_position(self, window_width, window_height):
+        screen_width, screen_height = self.screens[0].size
+        position_x = (screen_width - window_width) // 2
+        position_y = (screen_height - window_height) // 2
+        return position_x, position_y
 
     def show_description(self, file, key):
         self.main_window.info_dialog(file, gui_descriptions[key])
@@ -192,24 +190,36 @@ class ICSMerger(toga.App):
                 ics_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
                 excl_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
                 
-                analysis_window = toga.Window(title="ICS Analysis", size=(800, 600))
-                analysis_box = toga.Box(style=Pack(direction=ROW, padding=0))
+                window_width, window_height = 800, 600
+                position_x, position_y = self.window_position(window_width, window_height)
+                analysis_window = toga.Window(title="ICS Analysis", size=(window_width, window_height), position=(position_x, position_y))
+                
+                main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
 
-                ics_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
-                excl_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
+                row1 = toga.Box(style=Pack(direction=ROW, padding=10))
+                row2 = toga.Box(style=Pack(direction=ROW, padding=10, flex=1))
+                row3 = toga.Box(style=Pack(direction=ROW, padding=10))
 
-                ics_box.add(toga.Label("ICS Information", style=Pack(padding=(15, 0))))
-                ics_box.add(ics_text)
-                excl_box.add(toga.Label("Exclusions Information", style=Pack(padding=(15, 0))))
-                excl_box.add(excl_text)
+                # Labels
+                row1.add(toga.Label("ICS Information", style=Pack(font_weight=BOLD, flex=1)))
+                row1.add(toga.Label("Exclusions Information", style=Pack(font_weight=BOLD, flex=1)))
 
-                analysis_box.add(ics_box)
-                analysis_box.add(excl_box)
+                # Content
+                row2.add(ics_text)
+                row2.add(excl_text)                 
 
-                analysis_window.content = analysis_box
+                # Close button
+                row3.add(toga.Button('Close', on_press=lambda w: analysis_window.close(), style=Pack(padding=5)))
+
+                main_box.add(row1)
+                main_box.add(row2)
+                main_box.add(row3)
+
+                analysis_window.content = main_box
                 analysis_window.show()
 
-                load_files(ics1_path, ics2_path, exclusions_path, ics_text, excl_text)
+                load_files(self.main_window, ics1_path, ics2_path, exclusions_path, ics_text, excl_text)
+            
             except Exception as e:
                 self.main_window.error_dialog('Error', f'Failed to analyze files:\n{e}')
 
@@ -218,7 +228,7 @@ class ICSMerger(toga.App):
         ics2_path = str(self.file_paths.get('ics2', ''))
         exclusions_path = str(self.file_paths.get('exclusions', ''))
 
-        asyncio.create_task(run_merge(self.main_window, ics1_path, ics2_path, exclusions_path))
+        asyncio.create_task(run_merge(self, self.main_window, ics1_path, ics2_path, exclusions_path))
 
     def save_configuration(self, widget):
         # Retrieve the paths from the file_paths dictionary, if they exist
@@ -235,7 +245,7 @@ class ICSMerger(toga.App):
         config_path = get_appdir()
 
         try:
-            save_config(config, config_path)
+            save_config(self.main_window, config, config_path)
             self.main_window.info_dialog('Save Configuration', 'Configuration saved successfully.')
         except Exception as e:
             self.main_window.error_dialog('Error', f'Failed to save configuration:\n{e}')
@@ -254,14 +264,21 @@ class ICSMerger(toga.App):
             self.main_window.error_dialog('Error', f'Failed to open file:\n{e}')
 
     async def show_content_in_window(self, content, title):
-        content_window = toga.Window(title=title, size=(800, 600))
+        window_width, window_height = 800, 600
+        position_x, position_y = self.window_position(window_width, window_height)
+        content_window = toga.Window(title=title, size=(window_width, window_height), position=(position_x, position_y))
         content_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
 
+        # Text Area
         text_area = toga.MultilineTextInput(value=content, readonly=True, style=Pack(flex=1))
         scroll_container = toga.ScrollContainer(content=text_area, style=Pack(flex=1))
-
         content_box.add(scroll_container)
-        content_box.add(toga.Button('Close', on_press=lambda w: content_window.close(), style=Pack(padding=5)))
+        
+        # Close Button
+        button_box = toga.Box(style=Pack(direction=ROW, padding=10))
+        close_button = toga.Button('Close', on_press=lambda w: content_window.close(), style=Pack(padding=5))
+        button_box.add(close_button)
+        content_box.add(button_box)
 
         content_window.content = content_box
         content_window.show()
@@ -282,7 +299,9 @@ class ICSMerger(toga.App):
         await self.edit_exclusions_window(content, str(file_path))
 
     async def edit_exclusions_window(self, content, file_path):
-        exclusions_window = toga.Window(title="Exclusions Editor", size=(800, 600))
+        window_width, window_height = 800, 600
+        position_x, position_y = self.window_position(window_width, window_height)
+        exclusions_window = toga.Window(title="Exclusions Editor", size=(window_width, window_height), position=(position_x, position_y))
         text_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
         text_input = toga.MultilineTextInput(value=content, style=Pack(flex=1))
 
@@ -296,17 +315,18 @@ class ICSMerger(toga.App):
                 self.main_window.error_dialog("Error", f"Failed to save exclusions file:\n{e}")
 
         text_box.add(text_input)
-        button_box = toga.Box(style=Pack(direction=ROW, padding=5))
-        button_box.add(toga.Button('Save', on_press=save_exclusions))
-        button_box.add(toga.Button('Cancel', on_press=lambda w: exclusions_window.close()))
+        button_box = toga.Box(style=Pack(direction=ROW, padding=10))
+        save_button = toga.Button('Save', on_press=save_exclusions, style=Pack(padding=5))
+        cancel_button = toga.Button('Cancel', on_press=lambda w: exclusions_window.close(), style=Pack(padding=5))
+        button_box.add(save_button)
+        button_box.add(cancel_button)
         text_box.add(button_box)
 
         exclusions_window.content = text_box
         exclusions_window.show()
 
 def main():
-    return ICSMerger('ICS Merger', 'org.example.fileselector')
-
+    return ICSMerger("iCal Merger")
 
 if __name__ == '__main__':
     main().main_loop()

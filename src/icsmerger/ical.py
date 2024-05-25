@@ -1,14 +1,13 @@
 from icalendar import Calendar, Event
 from datetime import datetime
-#from tkinter import messagebox
 
 # Load iCalendar file
-def load_ics(file_path):
+def load_ics(main_window, file_path):
     try:
         with open(file_path, 'rb') as f:
             return Calendar.from_ical(f.read())
     except Exception as e:
-        #messagebox.showerror("Error", f"Failed to load iCal file: {file_path}\n{e}")
+        main_window.info_dialog("Error", f"Failed to load iCal file: {file_path}\n{e}")
         return None
     
 # Get set of events from calendar
@@ -25,5 +24,5 @@ def create_all_day_event(event):
     new_event.add('dtstart', event[1].date())
     new_event.add('dtend', event[2].date())
     new_event.add('dtstamp', datetime.now())
-    new_event.add('comment', "Processed by CPIMERGE")
+    new_event.add('comment', "Processed by ICSMERGER")
     return new_event
