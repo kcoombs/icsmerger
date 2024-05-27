@@ -67,5 +67,8 @@ beeware-venv/
 venv/
 .venv/
 
-# A place to stuff temp stuff
+# Visual Studio
+.vscode
+
+# A place for temporary stuff
 misc/

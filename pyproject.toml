@@ -2,7 +2,7 @@
 [tool.briefcase]
 project_name = "ICS Merger"
 bundle = "com.github.kcoombs.icsmerger"
-version = "0.0.1"
+version = "0.1.0"
 url = "https://github.com/kcoombs/icsmerger"
 license = "MIT license"
 author = "Kirk Coombs"
