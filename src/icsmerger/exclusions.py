@@ -8,20 +8,24 @@ def load_exclusions(main_window, file_path):
         return []
 
 # Filter events based on exclusions
-def filter_exclusions(events, exclusions, excl_text):
-    count = 0;
+def filter_exclusions(events, exclusions):
     filtered_events = set()
-    if exclusions:
-        excl_text.value += "Excluded:\n\n"
+    excluded_events = set()
     for event in events:
         if not any(excl.lower() in event[0].lower() for excl in exclusions):
             filtered_events.add(event)
         else:
-            if exclusions:
-                count += 1
-                excl_text.value += f"  - {event[0]} on {event[1].date()}\n"
+            excluded_events.add(event)
+    return filtered_events, excluded_events
+
+def print_exclusions(exclusions, excl):
+    count = 0
+    text = ""
+    for event in exclusions:
+        text += f"  - {event[0]} on {event[1].date()}\n"
+        count += 1
     if count == 0:
-            excl_text.value += f"  - None\n"
-    if exclusions:
-        excl_text.value += "\n"
-    return filtered_events
+        excl.value += "Nothing Excluded."
+    else:
+        excl.value += "Excluded:\n\n"
+        excl.value += f"{text}"

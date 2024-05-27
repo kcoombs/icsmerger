@@ -1,7 +1,50 @@
 import os
 from icalendar import Calendar
+import toga
+from toga.style import Pack
+from toga.style.pack import COLUMN, ROW, BOLD
 from .ical import load_ics, get_event_set
 from .exclusions import load_exclusions
+
+async def analyze(self, ics1_path, ics2_path, exclusions_path):
+    def close_handler(widget):
+        analysis_window.close()
+        self.main_window.show()
+    
+    ics_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
+    excl_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
+    
+    window_width, window_height = 800, 600
+    position_x, position_y = self.window_position(window_width, window_height)
+    analysis_window = toga.Window(title="ICS Analysis", size=(window_width, window_height), position=(position_x, position_y))
+    
+    main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
+
+    row1 = toga.Box(style=Pack(direction=ROW, padding=10))
+    row2 = toga.Box(style=Pack(direction=ROW, padding=10, flex=1))
+    row3 = toga.Box(style=Pack(direction=ROW, padding=10))
+
+    # Labels
+    row1.add(toga.Label("ICS Information", style=Pack(font_weight=BOLD, flex=1)))
+    row1.add(toga.Label("Exclusions Information", style=Pack(font_weight=BOLD, flex=1)))
+
+    # Content
+    row2.add(ics_text)
+    row2.add(excl_text)                 
+
+    # Close button
+    row3.add(toga.Button('Close', on_press=close_handler, style=Pack(padding_top=0, padding_right=5,padding_bottom=0, padding_left=0)))
+
+    main_box.add(row1)
+    main_box.add(row2)
+    main_box.add(row3)
+
+    analysis_window.content = main_box
+    analysis_window.on_close = close_handler
+    analysis_window.show()
+    self.main_window.hide()
+
+    load_files(self.main_window, ics1_path, ics2_path, exclusions_path, ics_text, excl_text)
 
 # Load files and display information
 def load_files(main_window, ics1_path, ics2_path, exclusions_path, ics_text, excl_text):
