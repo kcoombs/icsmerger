@@ -2,23 +2,23 @@ import os
 import platform
 import subprocess
 import json
-from appdirs import user_data_dir
+from pathlib import Path
 
-# Define application name and author for appdirs
-APP_NAME = "icsmerger"
-APP_AUTHOR = "Kirk Coombs"
+DEBUG=False
 
 # Get configuration file directory (per-OS)
-def get_appdir():
-    config_dir = user_data_dir(APP_NAME, APP_AUTHOR)
+def get_appdir(self):
+    config_dir = Path(self.paths.config)
+    if DEBUG: print(f"config_dir: {config_dir}")
     os.makedirs(config_dir, exist_ok=True)
     return os.path.join(config_dir, 'config.json')
 
 # Get save file directory (per-OS)
-def get_outdir():
-    config_dir = user_data_dir(APP_NAME, APP_AUTHOR)
-    os.makedirs(config_dir, exist_ok=True)
-    return os.path.join(config_dir, 'out.ics')
+def get_outdir(self):
+    get_outdir = Path(self.paths.cache)
+    if DEBUG: print(f"out_dir: {get_outdir}")
+    os.makedirs(get_outdir, exist_ok=True)
+    return os.path.join(get_outdir, 'out.ics')
 
 # Load configuration from file
 def load_config(self):
@@ -34,7 +34,7 @@ def load_config(self):
 
 # Save configuration to file
 def save_config(self, config):
-    config_path = get_appdir()
+    config_path = get_appdir(self)
     try:
         with open(config_path, 'w') as f:
              json.dump(config, f, indent=4)

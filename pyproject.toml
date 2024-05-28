@@ -23,7 +23,7 @@ test_sources = [
 
 requires = [
     "icalendar",
-    "appdirs",
+    "pathlib",
 ]
 
 test_requires = [

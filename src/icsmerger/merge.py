@@ -29,7 +29,7 @@ async def run_merge(self, ics1_path, ics2_path, exclusions_path, all_day):
             merge_window.info_dialog("Save Merge Results", "Merge results saved successfully.")
 
     async def open_merge_results(widget):
-        save_path = get_outdir()
+        save_path = get_outdir(self)
         try:
             if save_path:
                 with open(save_path, 'w') as f:
@@ -48,49 +48,51 @@ async def run_merge(self, ics1_path, ics2_path, exclusions_path, all_day):
     position_x = (screen_width - window_width) // 2
     position_y = (screen_height - window_height) // 2
     merge_window = toga.Window(title="Merge ICS Files", size=(window_width, window_height), position=(position_x, position_y))
-    merge_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
-
-    grid_box = toga.Box(style=Pack(direction=COLUMN, padding=0, flex=1))
-
-    row1 = toga.Box(style=Pack(direction=ROW, padding=10))
-    row2 = toga.Box(style=Pack(direction=ROW, padding=10, flex=1))
-    row3 = toga.Box(style=Pack(direction=ROW, padding=10))
-
+    
+    # Create Text Inputs
     excl_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
     remove_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
     merge_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
 
-    row1.add(toga.Label("Exclusions", style=Pack(font_weight=BOLD, flex=1)))
-    row1.add(toga.Label("Suggested Removals", style=Pack(font_weight=BOLD, flex=1)))
-    row1.add(toga.Label("New Events", style=Pack(font_weight=BOLD, flex=1)))
-
-    row2.add(excl_text)
-    row2.add(remove_text)
-    row2.add(merge_text)
-
-    close_button_box = toga.Box(style=Pack(direction=ROW, alignment=CENTER, flex=1))
-    save_suggestions_button_box = toga.Box(style=Pack(direction=ROW, alignment=CENTER, flex=1))
-    save_merge_button_box = toga.Box(style=Pack(direction=ROW, alignment=CENTER, flex=1))
-
-    close_button = toga.Button('Close', on_press=close_handler, style=Pack())
-    save_suggestions_button = toga.Button("Save Suggested Removals", on_press=save_suggestions, style=Pack())
-    save_merge_button = toga.Button("Save Events to .ics", on_press=save_merge_results, style=Pack(padding_top=0, padding_right=5,padding_bottom=0, padding_left=0))
-    open_merge_button = toga.Button("Open Events in Calendar", on_press=open_merge_results, style=Pack(padding=(0,5)))
-
-    close_button_box.add(close_button)
-    save_suggestions_button_box.add(save_suggestions_button)
-    save_merge_button_box.add(save_merge_button)
-    save_merge_button_box.add(open_merge_button)
-
-    row3.add(close_button_box)
-    row3.add(save_suggestions_button_box)
-    row3.add(save_merge_button_box)
-
-    grid_box.add(row1)
-    grid_box.add(row2)
-    grid_box.add(row3)
-
-    merge_box.add(grid_box)
+    # Create Content Box
+    merge_box = toga.Box(style=Pack(direction=COLUMN, padding=10), children=[
+        toga.Box(style=Pack(direction=ROW, padding=10), children=[
+        # Row 1, box labels
+            toga.Label("Exclusions", style=Pack(font_weight=BOLD, flex=1)),
+            toga.Label("Suggested Removals", style=Pack(font_weight=BOLD, flex=1)),
+            toga.Label("New Events", style=Pack(font_weight=BOLD, flex=1))
+        ]),
+        toga.Box(style=Pack(direction=ROW, padding=10, flex=1), children=[
+        # Row 2, text boxes
+            excl_text,
+            remove_text,
+            merge_text
+        ]),
+        toga.Box(style=Pack(direction=ROW, padding=10), children=[
+        # Row 3 
+            # Col 1, just a spacer
+            toga.Label("", style=Pack(direction=ROW, alignment=CENTER, flex=1)),
+            # Col 2, Save Removals button
+            toga.Box(style=Pack(direction=COLUMN, alignment=CENTER, flex=1), children=[
+                inner := toga.Box(style=Pack(direction=ROW), children=[
+                    toga.Button("Save Suggested Removals", on_press=save_suggestions)
+                ])
+            ]),
+            # Col 3, Save and Open Events Buttons
+            toga.Box(style=Pack(direction=COLUMN, alignment=CENTER, flex=1), children=[
+                inner := toga.Box(style=Pack(direction=ROW), children=[
+                    toga.Button("Save Events to .ics", on_press=save_merge_results, style=Pack(padding_top=0, padding_right=5,padding_bottom=0, padding_left=0)),
+                    toga.Button("Open Events in Calendar", on_press=open_merge_results, style=Pack(padding=(0,5)))
+                ])
+            ])
+        ]),
+        toga.Box(style=Pack(direction=ROW, padding=10), children=[
+        # Row 4, Close button
+            toga.Label("", style=Pack(flex=1)),
+            toga.Button('Close', on_press=close_handler),
+            toga.Label("", style=Pack(flex=1))
+        ])
+    ])
 
     merge_window.content = merge_box
     merge_window.on_close = close_handler
