@@ -157,7 +157,7 @@ class ICSMerger(toga.App):
         Returns:
             None
         """
-        exclusions_file_path = await self.main_window.save_file_dialog("New Exclusions File", "exclusions.txt")
+        exclusions_file_path = await self.main_window.save_file_dialog("New Exclusions File", "exclusions.txt", file_types=["txt"])
         if exclusions_file_path:
             self.file_paths['exclusions'] = exclusions_file_path
             file_name = os.path.basename(exclusions_file_path)
