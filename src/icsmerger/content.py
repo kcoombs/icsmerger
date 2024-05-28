@@ -11,18 +11,17 @@ async def show_content_in_window(self, content, title):
     window_width, window_height = 800, 600
     position_x, position_y = self.window_position(window_width, window_height)
     content_window = toga.Window(title=title, size=(window_width, window_height), position=(position_x, position_y))
-    content_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
-
-    # Text Area
-    text_area = toga.MultilineTextInput(value=content, readonly=True, style=Pack(flex=1))
-    scroll_container = toga.ScrollContainer(content=text_area, style=Pack(flex=1))
-    content_box.add(scroll_container)
     
-    # Close Button
-    button_box = toga.Box(style=Pack(direction=ROW))
-    close_button = toga.Button('Close', on_press=close_handler, style=Pack(padding=10))
-    button_box.add(close_button)
-    content_box.add(button_box)
+    content_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1), children=[
+        toga.ScrollContainer(
+            content = toga.MultilineTextInput(value=content, readonly=True, style=Pack(flex=1), placeholder="Empty File."), 
+            style=Pack(flex=1)),
+        inner := toga.Box(style=Pack(direction=ROW, padding=10), children=[
+            toga.Label("", style=Pack(flex=1)),
+            toga.Button('Close', on_press=close_handler, style=Pack(padding=10)),
+            toga.Label("", style=Pack(flex=1))
+        ])
+    ])
 
     content_window.content = content_box
     content_window.on_close = close_handler
@@ -31,7 +30,7 @@ async def show_content_in_window(self, content, title):
 
 async def edit_exclusions_window(self, content, file_path):
     changed = False
-
+    
     def change_handler(widget):
         nonlocal changed 
         changed = True
@@ -55,9 +54,9 @@ async def edit_exclusions_window(self, content, file_path):
     window_width, window_height = 800, 600
     position_x, position_y = self.window_position(window_width, window_height)
     exclusions_window = toga.Window(title="Exclusions Editor", size=(window_width, window_height), position=(position_x, position_y))
-    text_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
-    text_input = toga.MultilineTextInput(value=content, style=Pack(flex=1), on_change=change_handler)
-    
+
+    text_input = toga.MultilineTextInput(value=content, style=Pack(flex=1), on_change=change_handler, placeholder="Enter one string per line. When matched to an event's Summary, these strings will cause that event to be excluded from the output.")
+
     async def save_exclusions(widget):
         nonlocal changed
         try:
@@ -68,15 +67,17 @@ async def edit_exclusions_window(self, content, file_path):
         except Exception as e:
             await exclusions_window.error_dialog("Error", f"Failed to save exclusions file: {e}")
 
-    text_box.add(text_input)
-    button_box = toga.Box(style=Pack(direction=ROW))
-    save_button = toga.Button('Save', on_press=save_exclusions, style=Pack(padding=10))
-    close_button = toga.Button('Close', on_press=close_handler, style=Pack(padding=10))
-    button_box.add(save_button)
-    button_box.add(close_button)
-    text_box.add(button_box)
+    edit_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1), children=[
+        toga.ScrollContainer(content=text_input, style=Pack(flex=1)),
+        inner := toga.Box(style=Pack(direction=ROW, padding=10), children=[
+            toga.Label("", style=Pack(flex=1)),
+            toga.Button('Save', on_press=save_exclusions, style=Pack(padding=(0,5))),
+            toga.Button('Close', on_press=close_handler, style=Pack(padding=(0,5))),
+            toga.Label("", style=Pack(flex=1))
+        ])
+    ])
 
-    exclusions_window.content = text_box
+    exclusions_window.content = edit_box
     exclusions_window.on_close = on_close_handler
     exclusions_window.show()
     self.main_window.hide()
