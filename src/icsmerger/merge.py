@@ -112,43 +112,47 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
             merge_text.value += f"{merge_descriptions["no_reach"]}"
             return
 
-        # Load and print the exclusions
-        if not exclusions_path:
-            excl_text.value += "No EXCL file provided.\n\n"
-            exclusions = []
-        else:
-            exclusions = load_exclusions(merge_window, exclusions_path)
-            if exclusions:
-                excl_text.value += f"Excluding any new event(s) matching:\n\n"
-                for excl in exclusions:
-                    excl_text.value += f"  - '{excl}'\n"
-                excl_text.value += "\n"
-            else:
-                excl_text.value += "EXCL file was provided, but it was empty.\n\n"
 
         # Create a set of events from each calendar
         events1 = get_event_set(cal1) if cal1 else set()
         events2 = get_event_set(cal2) if cal2 else set()
 
-        # Generate unique events for each calendar
-        unique_events_ics2 = events2 - events1  # These are the initial new events to be added to the output ical
-        unique_events_ics1 = events1 - events2  # These are used to report possible events to manually remove
+        # Load and print the exclusions
+        filtered_events1 = set()
+        filtered_events2 = set()
+        excluded_events_ics1 = set()
+        excluded_events_ics2 = set()
+        if not exclusions_path:
+            excl_text.value += "No EXCL file provided.\n\n"
+            exclusions = []
+        else:
+            exclusions = load_exclusions(merge_window, exclusions_path)
+            filtered_events1, excluded_events_ics1 = filter_exclusions(events1, exclusions)
+            filtered_events2, excluded_events_ics2 = filter_exclusions(events2, exclusions)
+            if exclusions:
+                excl_text.value += f"Excluding any new event(s) matching:\n\n"
+                for excl in exclusions:
+                    excl_text.value += f"  - '{excl}'\n"
+                # excl_text.value += "\n"
+                print_exclusions(excluded_events_ics1,excl_text, "ICS1")
+                print_exclusions(excluded_events_ics2,excl_text, "ICS2")
+            else:
+                excl_text.value += "EXCL file was provided, but it was empty.\n\n"
 
-        # Remove exclusions from the unique_events_ics2
-        filtered_events_ics2, excluded_events = filter_exclusions(unique_events_ics2, exclusions)
-        filtered_events_ics1, excluded_events = filter_exclusions(unique_events_ics1, exclusions)
-        print_exclusions(excluded_events,excl_text)
+        # Generate unique events for each calendar
+        unique_events_ics2 = filtered_events2 - filtered_events1  # These are the initial new events to be added to the output ical
+        unique_events_ics1 = filtered_events1 - filtered_events2  # These are used to report possible events to manually remove
 
         # Create a new calendar from the filtered_events
         output_cal = Calendar()
-        for event in filtered_events_ics2:
+        for event in unique_events_ics2:
             output_cal.add_component(create_event(event, all_day))
-            
+
         # If there was an ICS1, report any event that exists in ICS1 but not ICS2 as possible removals, in sorted order
         if os.path.exists(ics1_path):
-            if filtered_events_ics1:
-                remove_text.value += f"Consider removing the following events from your calendar.\n\nThey existed in ICS1 but are not in ICS2 and thus may no longer be relevant.\n\nThese event(s) are:\n\n"
-                for event in sorted(filtered_events_ics1, key=lambda x: x[1]):
+            if unique_events_ics1:
+                remove_text.value += f"Consider manually removing the following events from your calendar.\n\nThey existed in ICS1 but are not in ICS2 and thus may no longer be relevant.\n\nThese event(s) are:\n\n"
+                for event in sorted(unique_events_ics1, key=lambda x: x[1]):
                     remove_text.value += f"  - {event[0]} on {event[1].date()}\n"
             else:
                 remove_text.value += "No suggested removals from the current calendar were found in ICS1."
@@ -156,9 +160,9 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
             remove_text.value += "First run detected. No removals from the current calendar are suggested."
 
         # Report overall result
-        if filtered_events_ics2:
-            merge_text.value += f"There are {len(filtered_events_ics2)} new event(s) in ICS2 that do not exist in ICS1.\n\nThese event(s) are:\n\n"
-            for event in sorted(filtered_events_ics2, key=lambda x: x[1]):
+        if unique_events_ics2:
+            merge_text.value += f"There are {len(unique_events_ics2)} new event(s) in ICS2 that do not exist in ICS1.\n\nThese event(s) are:\n\n"
+            for event in sorted(unique_events_ics2, key=lambda x: x[1]):
                 merge_text.value += f"  - {event[0]} on {event[1].date()}\n"
         else:
             merge_text.value += "No new events were found in ICS2.\n"
