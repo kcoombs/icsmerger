@@ -112,12 +112,11 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
             merge_text.value += f"{merge_descriptions["no_reach"]}"
             return
 
-
         # Create a set of events from each calendar
         events1 = get_event_set(cal1) if cal1 else set()
         events2 = get_event_set(cal2) if cal2 else set()
 
-        # Load and print the exclusions
+        # Load, apply, and print the exclusions
         filtered_events1 = set()
         filtered_events2 = set()
         excluded_events_ics1 = set()
@@ -125,17 +124,18 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
         if not exclusions_path:
             excl_text.value += "No EXCL file provided.\n\n"
             exclusions = []
+            filtered_events1 = events1
+            filtered_events2 = events2
         else:
             exclusions = load_exclusions(merge_window, exclusions_path)
             filtered_events1, excluded_events_ics1 = filter_exclusions(events1, exclusions)
             filtered_events2, excluded_events_ics2 = filter_exclusions(events2, exclusions)
             if exclusions:
-                excl_text.value += f"Excluding any new event(s) matching:\n\n"
+                excl_text.value += f"Excluding consideration of any event(s) matching:\n\n"
                 for excl in exclusions:
                     excl_text.value += f"  - '{excl}'\n"
-                # excl_text.value += "\n"
-                print_exclusions(excluded_events_ics1,excl_text, "ICS1")
-                print_exclusions(excluded_events_ics2,excl_text, "ICS2")
+                print_exclusions(sorted(excluded_events_ics1, key=lambda x: x[1]), excl_text, "ICS1")
+                print_exclusions(sorted(excluded_events_ics2, key=lambda x: x[1]), excl_text, "ICS2")
             else:
                 excl_text.value += "EXCL file was provided, but it was empty.\n\n"
 
