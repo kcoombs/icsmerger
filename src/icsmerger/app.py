@@ -1,11 +1,13 @@
 import os
 import asyncio
+import logging
 import toga
 import toga.paths
 import toga.platform
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW, CENTER
 from pathlib import Path
+from .__init__ import __version__
 from .descriptions import gui_descriptions
 from .merge import run_merge
 from .analyze import analyze
@@ -114,6 +116,7 @@ class ICSMerger(toga.App):
 
     async def select_file(self, key, file_types):
         file_path = await self.main_window.open_file_dialog('Select File', file_types=file_types)
+        logging.debug(f"Selected file: {file_path}")
         if file_path:
             file_name = os.path.basename(file_path)
             self.file_paths[key] = Path(file_path)  # Store as Path object for later use
@@ -139,6 +142,9 @@ class ICSMerger(toga.App):
         ics1_valid = 'ics1' in self.file_paths and self.file_paths['ics1'].is_file()
         ics2_valid = 'ics2' in self.file_paths and self.file_paths['ics2'].is_file()
         exclusions_valid = 'exclusions' in self.file_paths and self.file_paths['exclusions'].is_file()
+        logging.debug(f"ICS1 Valid: {ics1_valid}")
+        logging.debug(f"ICS2 Valid: {ics2_valid}")
+        logging.debug(f"EXCL Valid: {exclusions_valid}")
         self.analyze_button.enabled = ics2_valid
         self.merge_button.enabled = ics2_valid
         self.ics1_view_button.enabled = ics1_valid
@@ -158,6 +164,7 @@ class ICSMerger(toga.App):
             None
         """
         exclusions_file_path = await self.main_window.save_file_dialog("New Exclusions File", "exclusions.txt", file_types=["txt"])
+        logging.debug(f"exclusions_file_path: {exclusions_file_path}")
         if exclusions_file_path:
             self.file_paths['exclusions'] = exclusions_file_path
             file_name = os.path.basename(exclusions_file_path)
@@ -169,12 +176,15 @@ class ICSMerger(toga.App):
 
     def get_paths(self):
         ics1_path = str(self.file_paths.get('ics1', ''))
+        logging.debug(f"ics1_path: {ics1_path}")
         if ics1_path == ".":
             ics1_path = ""
         ics2_path = str(self.file_paths.get('ics2', ''))
+        logging.debug(f"ics2_path: {ics2_path}")
         if ics2_path == ".":
             ics2_path = ""
         exclusions_path = str(self.file_paths.get('exclusions', ''))
+        logging.debug(f"exclusions_path: {exclusions_path}")
         if exclusions_path == ".":
             exclusions_path = ""
         return ics1_path, ics2_path, exclusions_path
@@ -206,6 +216,7 @@ class ICSMerger(toga.App):
             None
         """
         ics1_path, ics2_path, exclusions_path = self.get_paths()
+        logging.debug(f"\n\tics1_path:\t{ics1_path}\n\tics2_path:\t{ics2_path}\n\texclusions_path:\t{exclusions_path}")
         sanity_check = self.check_paths(ics1_path, ics2_path, exclusions_path)
         if sanity_check:
             asyncio.create_task(analyze(self, ics1_path, ics2_path, exclusions_path))
@@ -222,6 +233,7 @@ class ICSMerger(toga.App):
         """
         ics1_path, ics2_path, exclusions_path = self.get_paths()
         all_day = self.checkmark.value
+        logging.debug(f"\n\tics1_path:\t{ics1_path}\n\tics2_path:\t{ics2_path}\n\texclusions_path:\t{exclusions_path}\n\tall_day:\t{all_day}")
         sanity_check = self.check_paths(ics1_path, ics2_path, exclusions_path)
         if sanity_check:
             asyncio.create_task(run_merge(self, ics1_path, ics2_path, exclusions_path, all_day))
@@ -245,11 +257,12 @@ class ICSMerger(toga.App):
                 'exclusions_path': exclusions_path,
                 'all_day' : all_day
             }
-
+            logging.debug(f"config: {config.items()}")
             save_config(self, config)
 
     async def view_file(self, key):
         file_path = self.file_paths.get(key)
+        logging.debug(f"file_path: {file_path}")
         if not file_path or not file_path.is_file():
             self.main_window.error_dialog('Warning', 'No file selected or file does not exist.')
             return
@@ -263,6 +276,7 @@ class ICSMerger(toga.App):
 
     async def view_edit_exclusions_file(self, key):
         file_path = self.file_paths.get(key)
+        logging.debug(f"file_path: {file_path}")
         if not file_path or not file_path.is_file():
             self.main_window.error_dialog('Warning', 'No file selected or file does not exist.')
             return
@@ -276,7 +290,7 @@ class ICSMerger(toga.App):
             return
 
 def main():
-    return ICSMerger(gui_descriptions["root_title"])
+    return ICSMerger(f"{gui_descriptions["root_title"]} ({__version__})")
 
 if __name__ == '__main__':
     main().main_loop()
