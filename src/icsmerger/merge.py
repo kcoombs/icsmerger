@@ -1,12 +1,12 @@
 import os
+import toga
+from toga.style import Pack
+from toga.style.pack import COLUMN, ROW, CENTER, BOLD
 from icalendar import Calendar
 from .ical import load_ics, get_event_set, create_event
 from .exclusions import load_exclusions, filter_exclusions, print_exclusions
 from .descriptions import merge_descriptions
 from .fileio import get_outdir, open_output_file
-import toga
-from toga.style import Pack
-from toga.style.pack import COLUMN, ROW, CENTER, BOLD
 
 async def run_merge(self, ics1_path, ics2_path, exclusions_path, all_day):
     
