@@ -1,22 +1,21 @@
 import os
+import logging
 import platform
 import subprocess
 import json
 from pathlib import Path
 
-DEBUG=False
-
 # Get configuration file directory (per-OS)
 def get_appdir(self):
     config_dir = Path(self.paths.config)
-    if DEBUG: print(f"config_dir: {config_dir}")
+    logging.debug(f"config_dir: {config_dir}")
     os.makedirs(config_dir, exist_ok=True)
     return os.path.join(config_dir, 'config.json')
 
 # Get save file directory (per-OS)
 def get_outdir(self):
     get_outdir = Path(self.paths.cache)
-    if DEBUG: print(f"out_dir: {get_outdir}")
+    logging.debug(f"out_dir: {get_outdir}")
     os.makedirs(get_outdir, exist_ok=True)
     return os.path.join(get_outdir, 'out.ics')
 
