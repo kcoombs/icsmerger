@@ -1,5 +1,6 @@
 import os
 import toga
+import logging
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW, CENTER, BOLD
 from icalendar import Calendar

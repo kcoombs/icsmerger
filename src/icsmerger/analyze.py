@@ -1,8 +1,9 @@
 import os
-from icalendar import Calendar
+import logging
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW, BOLD
+from icalendar import Calendar
 from .ical import load_ics, get_event_set
 from .exclusions import load_exclusions
 

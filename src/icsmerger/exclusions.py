@@ -1,3 +1,5 @@
+import logging
+
 # Load exclusions from file
 def load_exclusions(main_window, file_path):
     try:
