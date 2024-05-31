@@ -2,13 +2,17 @@ import platform
 import logging
 import requests
 import toga
+import json
 from pathlib import Path
 from .__init__ import __version__
-from .fileio import open_output_file
+from .fileio import open_output_file, sha_check
 from threading import Thread
 
+# "main" or "dev"
+BRANCH = "dev"
+
 async def update_checker(self):
-    update = VersionUpdate(__version__)
+    update = Updater(__version__)
     
     logging.debug(f"\n\tUpdate check result:\n\t"
                     f"check_success: {update.check_success}\n\t"
@@ -32,40 +36,53 @@ async def update_checker(self):
         return 
     logging.debug(f"Problem in update logic.")
 
-class VersionUpdate():
-    version_url = "https://raw.githubusercontent.com/kcoombs/icsmerger/icsmerge-dev/version.txt"
-    update_base_url = "https://github.com/kcoombs/icsmerger/releases/download/"
+class Updater():
+    branches = {
+        "main" : "main",
+        "dev" : "icsmerge-dev"
+    }
+    version_base_url = "https://raw.githubusercontent.com/kcoombs/icsmerger"
+    version_file = "versions.json"
+    update_base_url = "https://github.com/kcoombs/icsmerger/releases/download"
+    update_base_file = "ICS.Merger-"
     messages = {
             "platform" : "Unsupported platform for update checking.",
             "check_error" : "Unable to check for updates: ",
             "no_update" : "No update available.",
             "update_available" : "Update available.",
             "download_error" : "Unable to download update file: ",
-            "download_success" : "Update downloaded successfully."
+            "download_success" : "Update downloaded successfully.",
+            "sha_fail" : "Downloaded file did not have the expected contents. Download possibly corrupted."
     }
  
     def __init__(self, local_version):
+        self.version_url = f"{Updater.version_base_url}/{Updater.branches[BRANCH]}/{Updater.version_file}"
         self.check_success = False
         self.update_success = False
         self.update_available = False
         self.update_file_name = None
         self.update_file_base_name = "ICS.Merger-"
         self.update_file_extension = None
+        self.platform = None
         self.server_version = None
         self.local_version = local_version
         self.message = None
         self.file = None
+        self.sha256 = None
         self.exit = True
 
         if platform.system() == 'Windows':
+            self.platform = "windows"
             self.update_file_extension = ".msi"
         elif platform.system() == 'Darwin':  # macOS
+            self.platform = "macos"
             self.update_file_extension = ".dmg"
         # elif platform.system() == 'Linux':
+        #     self.platform = "linux"
         #     self.update_file_extension = ".deb"
         else:
-            logging.error(VersionUpdate.messages["platform"])
-            self.message = VersionUpdate.messages["platform"]
+            logging.error(Updater.messages["platform"])
+            self.message = Updater.messages["platform"]
             self.check_success = False
             return
 
@@ -75,43 +92,45 @@ class VersionUpdate():
     def check_for_updates(self):
         # Download the version file
         try:
-            response = requests.get(VersionUpdate.version_url)
-            logging.info(f"Checking update file at: {VersionUpdate.version_url}")
+            response = requests.get(self.version_url)
+            logging.info(f"Checking update file at: {self.version_url}")
+
+            # If download was successful, check the version
+            if response.status_code == 200:
+                versions = json.loads(response.text)
+                self.server_version = versions[-1]['version']
+                self.sha256 = versions[-1]['shasum'][self.platform]
+                logging.info(f"Local version: {self.local_version}, Server version: {self.server_version}, Server sha256: {self.sha256}")
+
+                ## FOR TESTING ##
+                self.local_version="0.0.9"
+                # self.server_version="0.0.9"
+                ## FOR TESTING ##
+                # If the server version is newer, download the update
+                if self.server_version > self.local_version:
+                    self.check_success = True
+                    self.update_available = True
+                    self.message = self.messages["update_available"]
+                    logging.info(f"Update available: {self.server_version}")
+                    return
+
+                # Otherwise, no update is available
+                else:
+                    self.check_success = True
+                    self.update_available = False
+                    self.message = Updater.messages["no_update"]
+                    logging.info(self.message)
+                    return
         except requests.exceptions.RequestException as e:
             self.check_success = False
-            self.message = VersionUpdate.messages["check_error" + str(e)]
+            self.message = Updater.messages["check_error" + str(e)]
             logging.error(self.message)
             return
-
-        # If download was successful, check the version
-        if response.status_code == 200:
-            self.server_version = response.text.strip()
-            logging.info(f"Local version: {self.local_version}, Server version: {self.server_version}")
-            
-            ## FOR TESTING ##
-            # self.server_version="0.1.0"
-            # self.local_version="0.0.9"
-            ## FOR TESTING ##
-
-            # If the server version is newer, download the update
-            if self.server_version > self.local_version:
-                self.check_success = True
-                self.update_available = True
-                self.message = VersionUpdate.messages["update_available"]
-                logging.info(f"Update available: {self.server_version}")
-                return
-            # Otherwise, no update is available
-            else:
-                self.check_success = True
-                self.update_available = False
-                self.message = VersionUpdate.messages["no_update"]
-                logging.info(self.message)
-                return
 
     def download_update(self):
         # URL of the new application files on the server
         self.update_file_name = self.update_file_base_name + self.server_version + self.update_file_extension
-        update_url = VersionUpdate.update_base_url + "v" + self.server_version + "/" + self.update_file_name
+        update_url = f"{Updater.update_base_url}/v{self.server_version}/{self.update_file_name}"
         logging.info(f"Downloading update from: {update_url}")
 
         # window_width, window_height = 300, 200
@@ -150,20 +169,28 @@ class VersionUpdate():
                 #         file_content += chunk
                 #         self.progress_bar.value = downloaded
 
-                # Set up success
-                self.update_success = True
-                self.message = VersionUpdate.messages["download_success"]
-                logging.info(self.message)
-                self.file = response.content
-                return
+                sha_check(response.content, self.sha256)
+                if sha_check:
+                    # Download and check success
+                    self.update_success = True
+                    self.message = Updater.messages["download_success"]
+                    logging.info(self.message)
+                    self.file = response.content
+                    return
+                else:
+                    # Download failure
+                    self.update_success = False
+                    self.message = Updater.messages["sha_fail"]
+                    logging.error(self.message)
+                    return
             else:
                 self.update_success = False
-                self.message = f"{VersionUpdate.messages["download_error"]} {str(e)}"
+                self.message = f"{Updater.messages["download_error"]} {str(e)}"
                 logging.error(self.message)
                 return
         except requests.exceptions.RequestException as e:
             self.update_success = False
-            self.message = f"{VersionUpdate.messages["download_error"]} {str(e)}"
+            self.message = f"{Updater.messages["download_error"]} {str(e)}"
             logging.error(self.message)
             return
 
@@ -172,7 +199,6 @@ class VersionUpdate():
         if dialog_result:
             logging.debug("User elected to update.")
             ## ADD THREADING ##
-            ## ADD SHASUM CHECK ##
             ## ADD DOWNLOAD PROGRESS CHECK ##
             self.download_update()
             if self.update_success:
@@ -186,20 +212,28 @@ class VersionUpdate():
                 if save_path:
                     with open(save_path, "wb") as f:
                         f.write(self.file)
-                    logging.debug("Update file saved.")
+                    logging.debug(f"Update file saved to {save_path}.")
                     # toga.App.app.main_window.info_dialog("Update", "Update downloaded successfully. Please close this application to install the update.")
-                    dialog_result = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Update file downloaded successfully. Exit this program and open the update file?")
-                    if dialog_result:
+                    dialog_result1 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Update file downloaded successfully. Exit this program and open the update file?")
+                    if dialog_result1:
                         open_output_file(self, save_path)
                         toga.App.app.exit()
                     else:
-                        # await toga.App.app.main_window.info_dialog("Update Dowloaded", f"The update is available at:\n\n{save_path}", on_result=None)
-                        file_path = await toga.App.app.main_window.save_file_dialog("Save Update File", suggested_filename=self.update_file_name)
-                        if file_path:   
-                            with open(file_path, 'wb') as f:
-                                f.write(self.file)
-                                toga.App.app.main_window.info_dialog("Save Update File", "Update file saved successfully.")    
-                        return
+                        dialog_result2 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Save downloaed file?")
+                        if dialog_result2:
+                            file_path = await toga.App.app.main_window.save_file_dialog("Save Update File", suggested_filename=self.update_file_name)
+                            if file_path:   
+                                with open(file_path, 'wb') as f:
+                                    f.write(self.file)
+                                    toga.App.app.main_window.info_dialog("Save Update File", "Update file saved successfully.")    
+                                    logging.debug(f"Update file saved to {file_path}.")
+                            return
+                        else:
+                            logging.debug("User elected to not save downloaded file.")
+                            return
+                else:
+                    logging.error(f"Save path {save_path} not found.")
+                    return
             else:
                 logging.error("Update failed.")
                 toga.App.app.main_window.error_dialog("Error", "Update failed.")
