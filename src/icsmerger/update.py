@@ -5,8 +5,8 @@ import toga
 import json
 from pathlib import Path
 from .__init__ import __version__
-from .fileio import open_output_file, sha_check
-from threading import Thread
+from .fileio import open_output_file, sha_check, save_file
+from threading import Thread, Event
 
 # "main" or "dev"
 BRANCH = "dev"
@@ -23,7 +23,7 @@ async def update_checker(self):
                 )
 
     if update.check_success and update.update_available:
-        logging.debug("Update check success, and update available.")
+        logging.debug("Update check was successful, and no update is available.")
         dialog_result = await toga.App.app.main_window.question_dialog("Update Check", f"Update available, you have {update.local_version}, {update.server_version}, available. Download update now?")
         await update.update_helper(dialog_result)
         return 
@@ -34,7 +34,7 @@ async def update_checker(self):
         logging.debug(f"Update check failed: {update.message}")
         toga.App.app.main_window.error_dialog("Update Check", f"Update check failed:\n{update.message}")
         return 
-    logging.debug(f"Problem in update logic.")
+    logging.debug("There is a problem with the update logic.")
 
 class Updater():
     branches = {
@@ -46,13 +46,13 @@ class Updater():
     update_base_url = "https://github.com/kcoombs/icsmerger/releases/download"
     update_base_file = "ICS.Merger-"
     messages = {
-            "platform" : "Unsupported platform for update checking.",
+            "platform" : "Platform unsupported for update checking.",
             "check_error" : "Unable to check for updates: ",
             "no_update" : "No update available.",
             "update_available" : "Update available.",
-            "download_error" : "Unable to download update file: ",
+            "download_error" : "Unable to download the update file: ",
             "download_success" : "Update downloaded successfully.",
-            "sha_fail" : "Downloaded file did not have the expected contents. Download possibly corrupted."
+            "sha_fail" : "The downloaded file did not have the expected contents. The download may be corrupted."
     }
  
     def __init__(self, local_version):
@@ -70,6 +70,8 @@ class Updater():
         self.file = None
         self.sha256 = None
         self.exit = True
+        self.update_finished = Event()
+        self.save_finished = Event()
 
         if platform.system() == 'Windows':
             self.platform = "windows"
@@ -133,6 +135,7 @@ class Updater():
         update_url = f"{Updater.update_base_url}/v{self.server_version}/{self.update_file_name}"
         logging.info(f"Downloading update from: {update_url}")
 
+        ## ADD DOWNLOAD PROGRESS CHECK ##
         # window_width, window_height = 300, 200
         # screen_width, screen_height = toga.App.screens[0].size
         # position_x = (screen_width - window_width) // 2
@@ -176,31 +179,35 @@ class Updater():
                     self.message = Updater.messages["download_success"]
                     logging.info(self.message)
                     self.file = response.content
+                    self.update_finished.set()
                     return
                 else:
                     # Download failure
                     self.update_success = False
                     self.message = Updater.messages["sha_fail"]
                     logging.error(self.message)
+                    self.update_finished.set()
                     return
             else:
                 self.update_success = False
                 self.message = f"{Updater.messages["download_error"]} {str(e)}"
                 logging.error(self.message)
+                self.update_finished.set()
                 return
         except requests.exceptions.RequestException as e:
             self.update_success = False
             self.message = f"{Updater.messages["download_error"]} {str(e)}"
             logging.error(self.message)
+            self.update_finished.set()
             return
 
     async def update_helper(self, dialog_result):
         logging.debug(f"update_helper: {dialog_result}, {self}")
         if dialog_result:
             logging.debug("User elected to update.")
-            ## ADD THREADING ##
-            ## ADD DOWNLOAD PROGRESS CHECK ##
-            self.download_update()
+            update_thread = Thread(target=self.download_update)
+            update_thread.start()
+            self.update_finished.wait()
             if self.update_success:
                 logging.debug("Download successful, saving.")
                 save_base_path = Path(toga.App.app.paths.config)
@@ -208,25 +215,27 @@ class Updater():
                 logging.debug(f"Save file name: {self.update_file_name}")
                 save_path = f"{save_base_path}/{self.update_file_name}"
                 logging.debug(f"Save file path: {save_path}")
-                ## ADD THREADING ##
                 if save_path:
-                    with open(save_path, "wb") as f:
-                        f.write(self.file)
+                    save_thread = Thread(target=save_file, args=(self.file, save_path, self.save_finished))
+                    save_thread.start()
+                    self.save_finished.wait()
+                    self.save_finished.clear()
                     logging.debug(f"Update file saved to {save_path}.")
-                    # toga.App.app.main_window.info_dialog("Update", "Update downloaded successfully. Please close this application to install the update.")
                     dialog_result1 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Update file downloaded successfully. Exit this program and open the update file?")
                     if dialog_result1:
                         open_output_file(self, save_path)
                         toga.App.app.exit()
                     else:
-                        dialog_result2 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Save downloaed file?")
+                        dialog_result2 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Save downloaded file?")
                         if dialog_result2:
                             file_path = await toga.App.app.main_window.save_file_dialog("Save Update File", suggested_filename=self.update_file_name)
                             if file_path:   
-                                with open(file_path, 'wb') as f:
-                                    f.write(self.file)
-                                    toga.App.app.main_window.info_dialog("Save Update File", "Update file saved successfully.")    
-                                    logging.debug(f"Update file saved to {file_path}.")
+                                save_thread = Thread(target=save_file, args=(self.file, file_path, self.save_finished))
+                                save_thread.start()
+                                self.save_finished.wait()
+                                self.save_finished.clear()
+                                toga.App.app.main_window.info_dialog("Save Update File", "Update file saved successfully.")    
+                                logging.debug(f"Update file saved to {file_path}.")
                             return
                         else:
                             logging.debug("User elected to not save downloaded file.")
