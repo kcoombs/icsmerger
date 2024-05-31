@@ -50,7 +50,7 @@ def create_file(self, file):
     except Exception as e:
         self.main_window.error_dialog('Error', f'Failed to create file: {file}')
 
-# Open the OUT file in the default application
+# Open file_path in the default application
 def open_output_file(self, file_path):
     try:
         if platform.system() == 'Windows':
