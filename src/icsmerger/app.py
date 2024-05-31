@@ -13,9 +13,11 @@ from .merge import run_merge
 from .analyze import analyze
 from .fileio import save_config, load_config, get_appdir, create_file
 from .content import show_content_in_window, edit_exclusions_window
+from .update import update_checker
 
 class ICSMerger(toga.App):
     def startup(self):
+
         # Initialize main window
         window_width, window_height = 750, 225
         position_x, position_y = self.window_position(window_width, window_height)
@@ -79,6 +81,9 @@ class ICSMerger(toga.App):
         # Activate the main window
         self.main_window.content = main_box
         self.main_window.show()
+
+        # Check for updates
+        toga.App.app.add_background_task(update_checker)
 
         # Initial validation of file entries
         self.validate_files()
