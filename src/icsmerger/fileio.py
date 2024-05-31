@@ -3,6 +3,7 @@ import logging
 import platform
 import subprocess
 import json
+import hashlib
 from pathlib import Path
 
 # Get configuration file directory (per-OS)
@@ -63,3 +64,13 @@ def open_output_file(self, file_path):
            self.main_window.info_dialog("Unsupported OS", "Your operating system is not supported for this operation.")
     except Exception as e:
         print(f"Error opening file: {e}")
+
+# Validate the shasum of contents using sha256
+def sha_check(contents, sha256):
+    calculated_shasum = hashlib.sha256(contents).hexdigest()
+    
+    # Check the shasum
+    if calculated_shasum == sha256:
+        return True
+    else:
+        return False
