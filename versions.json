@@ -1,16 +1,15 @@
 [
     {
-        "version": "0.0.9",
-        "shasum": {
-            "windows": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-            "macos": "6dcd4ce23d88e2ee95838f7b014b628e8b7d6f7a8a39a3fe76b7b13a6da40bb8"
-        }
-    },
-    {
         "version": "0.1.0",
         "shasum": {
             "windows": "46ca47f9e2d23aaa5786eb62b995ddc3000e7d3c98dbe57f126b3f305fb46e1a",
             "macos": "1e815aab2b9832b232a6823702437de009714adc1f98e1ea2c463fe540e40bf5"
+        }
+    },
+    {
+        "version": "0.2.0",
+        "shasum": {
+            "macos": "2c25b38d706974742f5ee41408c99fbc145541630f9e7f62e7392a020528e296"
         }
     }
 ]

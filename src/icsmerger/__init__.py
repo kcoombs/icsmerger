@@ -1,5 +1,5 @@
 import logging
-__version__ = "0.2.1"
+__version__ = "0.2.0"
 
 # Configure the logging module to output diagnostic information
     # CRITICAL (50): A very serious error that may prevent the program from continuing to run.
@@ -8,4 +8,4 @@ __version__ = "0.2.1"
     # INFO (20): Confirmation that things are working as expected.
     # DEBUG (10): Detailed information, typically of interest only when diagnosing problems.
     # NOTSET (0) which is used to capture all levels of log.
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(module)s %(name)s.%(funcName)s: %(message)s')
+logging.basicConfig(level=logging.ERROR, format='[%(levelname)s] %(module)s %(name)s.%(funcName)s: %(message)s')
