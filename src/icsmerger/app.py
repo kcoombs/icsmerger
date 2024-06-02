@@ -4,6 +4,7 @@ import logging
 import toga
 import toga.paths
 import toga.platform
+from threading import Thread
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW, CENTER
 from pathlib import Path
@@ -83,7 +84,8 @@ class ICSMerger(toga.App):
         self.main_window.show()
 
         # Check for updates
-        toga.App.app.add_background_task(update_checker)
+        update_thread = Thread(target=toga.App.app.add_background_task(update_checker))
+        update_thread.start()
 
         # Initial validation of file entries
         self.validate_files()

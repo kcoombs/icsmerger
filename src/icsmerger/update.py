@@ -2,6 +2,9 @@ import platform
 import logging
 import requests
 import toga
+import asyncio
+from toga.style import Pack
+from toga.style.pack import COLUMN, ROW, CENTER
 import json
 from pathlib import Path
 from .__init__ import __version__
@@ -9,10 +12,10 @@ from .fileio import open_output_file, sha_check, save_file
 from threading import Thread, Event
 
 # "main" or "dev"
-BRANCH = "dev"
+BRANCH = "main"
 
 async def update_checker(self):
-    update = Updater(__version__)
+    update = Updater(self, __version__)
     
     logging.debug(f"\n\tUpdate check result:\n\t"
                     f"check_success: {update.check_success}\n\t"
@@ -24,15 +27,19 @@ async def update_checker(self):
 
     if update.check_success and update.update_available:
         logging.debug("Update check was successful, and no update is available.")
-        dialog_result = await toga.App.app.main_window.question_dialog("Update Check", f"Update available, you have {update.local_version}, {update.server_version}, available. Download update now?")
-        await update.update_helper(dialog_result)
+        update.download_window.show()
+        dialog_result = await update.download_window.question_dialog("Update Check", f"Update available, you have {update.local_version}, {update.server_version}, available. Download update now?")
+        await update.update_helper(update, dialog_result)
+        update.download_window.close()
         return 
     elif update.check_success and not update.update_available:
         logging.debug("Update check success, and no update available.")
         return 
     elif not update.check_success:
         logging.debug(f"Update check failed: {update.message}")
-        toga.App.app.main_window.error_dialog("Update Check", f"Update check failed:\n{update.message}")
+        update.download_window.show()
+        await update.download_window.error_dialog("Update Check", f"Update check failed:\n{update.message}")
+        update.download_window.close()
         return 
     logging.debug("There is a problem with the update logic.")
 
@@ -55,7 +62,7 @@ class Updater():
             "sha_fail" : "The downloaded file did not have the expected contents. The download may be corrupted."
     }
  
-    def __init__(self, local_version):
+    def __init__(self, main_window, local_version):
         self.version_url = f"{Updater.version_base_url}/{Updater.branches[BRANCH]}/{Updater.version_file}"
         self.check_success = False
         self.update_success = False
@@ -70,8 +77,9 @@ class Updater():
         self.file = None
         self.sha256 = None
         self.exit = True
-        self.update_finished = Event()
         self.save_finished = Event()
+        self.file_size = 0
+        self.downloaded_size = 0
 
         if platform.system() == 'Windows':
             self.platform = "windows"
@@ -87,6 +95,12 @@ class Updater():
             self.message = Updater.messages["platform"]
             self.check_success = False
             return
+
+        window_width, window_height = 400, 150
+        screen_width, screen_height = main_window.screens[0].size
+        position_x = (screen_width - window_width) // 2
+        position_y = (screen_height - window_height) // 2
+        self.download_window = toga.Window(title="Update Checker", resizable=False, closable=True, minimizable=True, closeable=False, size=(window_width, window_height), position=(position_x, position_y))
 
         self.check_for_updates()
         return
@@ -105,9 +119,10 @@ class Updater():
                 logging.info(f"Local version: {self.local_version}, Server version: {self.server_version}, Server sha256: {self.sha256}")
 
                 ## FOR TESTING ##
-                self.local_version="0.0.9"
+                # self.local_version="0.0.9"
                 # self.server_version="0.0.9"
                 ## FOR TESTING ##
+
                 # If the server version is newer, download the update
                 if self.server_version > self.local_version:
                     self.check_success = True
@@ -123,92 +138,108 @@ class Updater():
                     self.message = Updater.messages["no_update"]
                     logging.info(self.message)
                     return
+            else:
+                self.check_success = False
+                self.message = Updater.messages["check_error"] + "\nHTTP Status: " + str(response.status_code)
+                logging.error(self.message)
+                return
         except requests.exceptions.RequestException as e:
             self.check_success = False
             self.message = Updater.messages["check_error" + str(e)]
             logging.error(self.message)
             return
 
+    # def download_update(self, progress_box):
     def download_update(self):
         # URL of the new application files on the server
         self.update_file_name = self.update_file_base_name + self.server_version + self.update_file_extension
         update_url = f"{Updater.update_base_url}/v{self.server_version}/{self.update_file_name}"
         logging.info(f"Downloading update from: {update_url}")
 
-        ## ADD DOWNLOAD PROGRESS CHECK ##
-        # window_width, window_height = 300, 200
-        # screen_width, screen_height = toga.App.screens[0].size
-        # position_x = (screen_width - window_width) // 2
-        # position_y = (screen_height - window_height) // 2
-        # self.download_window = toga.Window(title="Update Download", resizable=False, closable=False, minimizable=True, closeable=False, size=(window_width, window_height), position=(position_x, position_y))
-        # self.download_window = toga.Window(title="Update Download", resizable=False, closable=False, minimizable=True, closeable=False, size=(window_width, window_height))
-
         # Download the new application files
         try:
             response = requests.get(update_url, stream=True)
             if response.status_code == 200:
-                # logging.debug(f"Response headers: {response.headers}")
-                # file_size = int(response.headers.get('Content-Length', 0))
+                self.file_size = int(response.headers.get('content-length', 0))
+                # logging.debug(f"File size: {self.file_size}")
+
+                chunks = []
+                for chunk in response.iter_content(1024):
+                    chunks.append(chunk)
+                    self.downloaded_size += len(chunk)
+                    # logging.debug(f"Chunk size: {len(chunk)}, Total size: {self.downloaded_size}")
                 
-                # # Create a progress bar
-                # self.progress_bar = toga.ProgressBar(max=file_size)
+                content = b''.join(chunks)
 
-                # # Create a box to hold the progress bar and a label
-                # self.progress_box = toga.Box()
-                # self.progress_label = toga.Label('Downloading update...')
-                # self.progress_box.add(self.progress_label)
-                # self.progress_box.add(self.progress_bar)
-
-                # # Add the box to the main window
-                # self.download_window.content = self.progress_box
-                # self.download_window.show()
-
-                # # Update the progress bar as the file downloads
-                # downloaded = 0
-                # file_content = b""
-                # for chunk in response.iter_content(chunk_size=1024):
-                #     if chunk:
-                #         downloaded += len(chunk)
-                #         file_content += chunk
-                #         self.progress_bar.value = downloaded
-
-                sha_check(response.content, self.sha256)
+                sha_check(content, self.sha256)
                 if sha_check:
                     # Download and check success
                     self.update_success = True
                     self.message = Updater.messages["download_success"]
                     logging.info(self.message)
-                    self.file = response.content
-                    self.update_finished.set()
+                    self.file = content
                     return
                 else:
                     # Download failure
                     self.update_success = False
                     self.message = Updater.messages["sha_fail"]
                     logging.error(self.message)
-                    self.update_finished.set()
                     return
             else:
                 self.update_success = False
                 self.message = f"{Updater.messages["download_error"]} {str(e)}"
                 logging.error(self.message)
-                self.update_finished.set()
                 return
         except requests.exceptions.RequestException as e:
             self.update_success = False
             self.message = f"{Updater.messages["download_error"]} {str(e)}"
             logging.error(self.message)
-            self.update_finished.set()
             return
 
-    async def update_helper(self, dialog_result):
+    async def update_helper(self, update, dialog_result):
         logging.debug(f"update_helper: {dialog_result}, {self}")
         if dialog_result:
             logging.debug("User elected to update.")
+
+            progress_box = toga.Box(style=Pack(direction=COLUMN, alignment=CENTER, padding=10, flex=1), children=[
+                toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[toga.Label('', style=Pack(padding=5))]),
+                toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[
+                    progress_label := toga.Label('Downloading Update', style=Pack(alignment=CENTER, padding=10, font_weight='bold'))
+                    ]),
+                toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[
+                    progress_bar := toga.ProgressBar(style=Pack(alignment=CENTER, padding=(10, 60, 10, 60), flex=1))
+                    ]),
+                toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[toga.Label('', style=Pack(padding=5))]),
+                # toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[
+                #     messages := toga.Label('PLACEHOLDER', style=Pack(alignment=CENTER, padding=10)),
+                #     ]),
+                # toga.Box(style=Pack(direction=ROW, alignment=CENTER), children=[
+                #     button1 := toga.Button(text="BUTTON1", style=Pack(alignment=CENTER, padding=10)),
+                #     button2 := toga.Button(text="BUTTON2", style=Pack(alignment=CENTER, padding=10))
+                #     ])
+            ])
+            update.download_window.content = progress_box
             update_thread = Thread(target=self.download_update)
             update_thread.start()
-            self.update_finished.wait()
+            progress_started = False
+            while update_thread.is_alive():
+                if self.file_size == 0:
+                    # File size not yet known
+                    pass
+                elif self.file_size != 0 and progress_started == False:
+                    # Create progress bar
+                    progress_started = True
+                    progress_bar.max = self.file_size
+                    progress_bar.start()
+                    # logging.debug(f"Start progress bar with: {self.file_size}")
+                else:
+                    # Update progress bar
+                    progress_bar.value = self.downloaded_size
+                    # logging.debug(f"{self.downloaded_size} of {self.file_size} downloaded.")
+                await asyncio.sleep(0.01)
+            progress_bar.stop()
             if self.update_success:
+                progress_label.text = 'Downloading Complete'
                 logging.debug("Download successful, saving.")
                 save_base_path = Path(toga.App.app.paths.config)
                 logging.debug(f"Save path: {save_base_path}")
@@ -221,20 +252,20 @@ class Updater():
                     self.save_finished.wait()
                     self.save_finished.clear()
                     logging.debug(f"Update file saved to {save_path}.")
-                    dialog_result1 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Update file downloaded successfully. Exit this program and open the update file?")
+                    dialog_result1 = await update.download_window.question_dialog("Update File Downloaded", "Update file downloaded successfully. Exit this program and open the update file?")
                     if dialog_result1:
                         open_output_file(self, save_path)
                         toga.App.app.exit()
                     else:
-                        dialog_result2 = await toga.App.app.main_window.question_dialog("Update File Downloaded", "Save downloaded file?")
+                        dialog_result2 = await update.download_window.question_dialog("Update File Downloaded", "Save downloaded file?")
                         if dialog_result2:
-                            file_path = await toga.App.app.main_window.save_file_dialog("Save Update File", suggested_filename=self.update_file_name)
+                            file_path = await update.download_window.save_file_dialog("Save Update File", suggested_filename=self.update_file_name)
                             if file_path:   
                                 save_thread = Thread(target=save_file, args=(self.file, file_path, self.save_finished))
                                 save_thread.start()
                                 self.save_finished.wait()
                                 self.save_finished.clear()
-                                toga.App.app.main_window.info_dialog("Save Update File", "Update file saved successfully.")    
+                                await update.download_window.info_dialog("Save Update File", "Update file saved successfully.")    
                                 logging.debug(f"Update file saved to {file_path}.")
                             return
                         else:
@@ -245,7 +276,7 @@ class Updater():
                     return
             else:
                 logging.error("Update failed.")
-                toga.App.app.main_window.error_dialog("Error", "Update failed.")
+                await update.download_window.error_dialog("Error", "Update failed.")
                 return
         else:
             logging.debug("User elected to not update.")
