@@ -128,7 +128,7 @@ class Updater():
                 await asyncio.sleep(0.01)
             update.update_ui.update_progress()
             if self.update_success:
-                # self.progress_label.text = 'Downloading Complefte'
+                # self.progress_label.text = 'Downloading Complete'
                 logging.debug("Download successful, saving.")
                 save_base_path = Path(toga.App.app.paths.config)
                 logging.debug(f"Save path: {save_base_path}")

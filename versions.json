@@ -11,5 +11,11 @@
         "shasum": {
             "macos": "2c25b38d706974742f5ee41408c99fbc145541630f9e7f62e7392a020528e296"
         }
+    },
+    {
+        "version": "0.2.1",
+        "shasum": {
+            "macos": "df251c9b1ecb127bb54ed7ab31f29f0fc353e78d7e3a036e2c010e8580fe7f30"
+        }
     }
 ]
