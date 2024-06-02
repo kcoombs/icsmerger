@@ -1,5 +1,5 @@
 import logging
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # Configure the logging module to output diagnostic information
     # CRITICAL (50): A very serious error that may prevent the program from continuing to run.
