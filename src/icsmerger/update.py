@@ -14,8 +14,8 @@ from .fileio import open_output_file, sha_check, save_file
 # "main" or "dev"
 BRANCH = "dev"
 
-async def update_checker(self):
-    update = Updater(self, __version__)
+async def update_checker(self, type):
+    update = Updater(self, __version__, type)
     
     logging.debug(f"\n\tUpdate check result:\n\t"
                     f"check_success: {update.check_success}\n\t"
@@ -34,6 +34,10 @@ async def update_checker(self):
         return 
     elif update.check_success and not update.update_available:
         logging.debug("Update check success, and no update available.")
+        if not update.automatic:
+            update.updater_ui.show()
+            await update.updater_ui.update_check_no_update_available(update.local_version, update.server_version)
+            update.updater_ui.close()
         return 
     elif not update.check_success:
         logging.debug(f"Update check failed: {update.message}")
@@ -63,7 +67,7 @@ class Updater():
             "sha_fail" : "The downloaded file did not have the expected contents. The download may be corrupted."
     }
  
-    def __init__(self, main_window, local_version):
+    def __init__(self, main_window, local_version, type):
         self.version_url = f"{Updater.version_base_url}/{Updater.branches[BRANCH]}/{Updater.version_file}"
         self.check_success = False
         self.update_success = False
@@ -82,8 +86,13 @@ class Updater():
         self.save_finished = Event()
         self.file_size = 0
         self.downloaded_size = 0
-        self.automatic = True                   # For future use, to silent check failure on automatic updates
+        self.automatic = None
 
+        if type:
+            self.automatic = True
+        else:
+            self.automatic = False
+        
         if platform.system() == 'Windows':
             self.platform = "windows"
             self.update_file_extension = ".msi"
@@ -302,11 +311,15 @@ class UpdaterUI():
         return
 
     async def update_available(self, local_version, server_version):
-        result = await self.update_window.question_dialog("Update Check", f"Update available, you have {local_version}, {server_version}, available. Download update now?")
+        result = await self.update_window.question_dialog("Update Available", f"You have {local_version}, {server_version}, available.\n\nDownload update now?")
         return result
     
     async def update_check_failed(self, message):
         result = await self.update_window.error_dialog("Update Check", f"Update check failed:\n{message}")
+        return result
+
+    async def update_check_no_update_available(self, local_version, server_version):
+        result = await self.update_window.error_dialog("No Update Available", f"You have {local_version}, server version is {server_version}.")
         return result
 
     async def update_download_failed(self):

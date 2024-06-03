@@ -7,6 +7,7 @@ import toga.platform
 from threading import Thread
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW, CENTER
+from toga.command import Group
 from pathlib import Path
 from .__init__ import __version__
 from .descriptions import gui_descriptions
@@ -79,16 +80,24 @@ class ICSMerger(toga.App):
 
         main_box.add(button_box)
 
+        check_for_updates_command = toga.Command(lambda w: self.update_helper(False), 'Check for updates...', group=Group.APP, section=1)
+        self.commands.add(check_for_updates_command)
+
         # Activate the main window
         self.main_window.content = main_box
         self.main_window.show()
 
         # Check for updates
-        update_thread = Thread(target=toga.App.app.add_background_task(update_checker))
-        update_thread.start()
+        self.update_helper(True)
 
         # Initial validation of file entries
         self.validate_files()
+
+    def update_helper(self, type):
+        async def task(widget):
+            await update_checker(self, type)
+        update_thread = Thread(target=toga.App.app.add_background_task(task))
+        update_thread.start()
 
     def create_file_selection_row(self, description_key, placeholder_text, entry_key, entry_name, file_types):
         button_width = 60
