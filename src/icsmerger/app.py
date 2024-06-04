@@ -7,7 +7,7 @@ import toga.paths
 import toga.platform
 from threading import Thread
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW, CENTER
+from toga.style.pack import COLUMN, ROW, CENTER, TOP
 from toga.command import Group
 from pathlib import Path
 from .__init__ import __version__
@@ -109,7 +109,7 @@ class ICSMerger(toga.App):
     def create_file_selection_row(self, description_key, placeholder_text, entry_key, entry_name, file_types):
         button_width = 60
         description_button = toga.Button('?', on_press=lambda widget: self.show_description(entry_name, description_key), style=Pack(padding=5))
-        label = toga.Box(style=Pack(padding=5), children=[toga.Label(gui_descriptions[entry_key], style=Pack(padding=5))])
+        label = toga.Box(style=Pack(padding=5), children=[toga.Label(gui_descriptions[entry_key], style=Pack(padding=5, width=40))])
         entry = toga.TextInput(placeholder=placeholder_text,style=Pack(padding=5, flex=1), readonly=True)
         clear_button = toga.Button('Clear', on_press=lambda widget: self.clear_entry(entry_key), style=Pack(padding=5, width=button_width))
         browse_button = toga.Button('Browse', on_press=lambda widget: asyncio.create_task(self.select_file(entry_key, file_types)), style=Pack(padding=5, width=button_width))
@@ -118,7 +118,10 @@ class ICSMerger(toga.App):
         else:
             view_button = toga.Button('View', on_press=lambda widget: asyncio.create_task(self.view_file(entry_key)), enabled=False, style=Pack(padding=5, width=button_width))
 
-        row_box = toga.Box(style=Pack(direction=ROW, padding=5))
+        if self.platform == 'Windows':
+            row_box = toga.Box(style=Pack(direction=ROW, alignment=TOP, padding=5))
+        else:
+            row_box = toga.Box(style=Pack(direction=CENTER, alignment=TOP, padding=5))
         row_box.add(description_button)
         row_box.add(label)
         if self.platform == 'Windows':
