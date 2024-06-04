@@ -83,7 +83,11 @@ class ICSMerger(toga.App):
 
         main_box.add(button_box)
 
-        check_for_updates_command = toga.Command(lambda w: self.update_helper(False), 'Check for updates...', group=Group.APP, section=1)
+        # Add check for updates command
+        if self.platform == 'Windows':
+            check_for_updates_command = toga.Command(lambda w: self.update_helper(False), 'Check for updates...', group=Group.FILE, section=1)
+        else:
+            check_for_updates_command = toga.Command(lambda w: self.update_helper(False), 'Check for updates...', group=Group.APP)
         self.commands.add(check_for_updates_command)
 
         # Activate the main window
