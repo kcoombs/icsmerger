@@ -39,11 +39,11 @@ class ICSMerger(toga.App):
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
 
         # ICS1 file selection
-        ics1_box, self.ics1_entry, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Previous ICS file (optional)", "ics1", "ICS1", ["ICS"])
+        ics1_box, self.ics1_entry, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Previous iCal (.ics) file (optional)", "ics1", "ICS1", ["ICS"])
         main_box.add(ics1_box)
 
         # ICS2 file selection
-        ics2_box, self.ics2_entry, self.ics2_view_button = self.create_file_selection_row("ics2_description", "New ICS file", "ics2", "ICS2", ["ICS"])
+        ics2_box, self.ics2_entry, self.ics2_view_button = self.create_file_selection_row("ics2_description", "New iCal (.ics) file", "ics2", "ICS2", ["ICS"])
         main_box.add(ics2_box)
 
         # Exclusions file selection
@@ -108,9 +108,9 @@ class ICSMerger(toga.App):
 
     def create_file_selection_row(self, description_key, placeholder_text, entry_key, entry_name, file_types):
         button_width = 60
-        description_button = toga.Button('?', on_press=lambda widget: self.show_description(entry_name, description_key), style=Pack(padding=5, font_weight='bold'))
-        label = toga.Label(gui_descriptions[entry_key], style=Pack(padding=5, width=40, font_weight='bold'))
-        entry = toga.TextInput(placeholder=placeholder_text,style=Pack(flex=1, padding=5), readonly=True)
+        description_button = toga.Button('?', on_press=lambda widget: self.show_description(entry_name, description_key), style=Pack(padding=5))
+        label = toga.Box(style=Pack(padding=5), children=[toga.Label(gui_descriptions[entry_key], style=Pack(padding=5, flex=1))])
+        entry = toga.TextInput(placeholder=placeholder_text,style=Pack(padding=5), readonly=True)
         clear_button = toga.Button('Clear', on_press=lambda widget: self.clear_entry(entry_key), style=Pack(padding=5, width=button_width))
         browse_button = toga.Button('Browse', on_press=lambda widget: asyncio.create_task(self.select_file(entry_key, file_types)), style=Pack(padding=5, width=button_width))
         if entry_key == 'exclusions':
