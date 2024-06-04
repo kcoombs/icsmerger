@@ -121,7 +121,7 @@ class ICSMerger(toga.App):
         if self.platform == 'Windows':
             row_box = toga.Box(style=Pack(direction=ROW, alignment=TOP, padding=5))
         else:
-            row_box = toga.Box(style=Pack(direction=CENTER, alignment=TOP, padding=5))
+            row_box = toga.Box(style=Pack(direction=ROW, alignment=CENTER, padding=5))
         row_box.add(description_button)
         row_box.add(label)
         if self.platform == 'Windows':
