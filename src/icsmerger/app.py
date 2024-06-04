@@ -1,5 +1,6 @@
 import os
 import asyncio
+import platform
 import logging
 import toga
 import toga.paths
@@ -19,6 +20,8 @@ from .update import update_checker
 
 class ICSMerger(toga.App):
     def startup(self):
+
+        self.platform = platform.system()
 
         # Initialize main window
         window_width, window_height = 750, 225
@@ -114,11 +117,16 @@ class ICSMerger(toga.App):
         row_box = toga.Box(style=Pack(direction=ROW, padding=5))
         row_box.add(description_button)
         row_box.add(label)
-        row_box.add(entry)
+        if self.platform == 'Windows':
+            row_box.add(toga.Box(style=Pack(direction=COLUMN, flex=1), children=[
+                entry, 
+                toga.Label(placeholder_text, style=Pack(padding_left=5, padding_top=0, padding_bottom=0))
+            ]))
+        else:
+            row_box.add(entry)
         row_box.add(clear_button)
         row_box.add(browse_button)
         row_box.add(view_button)
-
         return row_box, entry, view_button
 
     def window_position(self, window_width, window_height):
