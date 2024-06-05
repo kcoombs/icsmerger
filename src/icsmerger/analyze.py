@@ -10,6 +10,8 @@ from .exclusions import load_exclusions
 async def analyze(self, ics1_path, ics2_path, exclusions_path):
     def close_handler(widget):
         analysis_window.close()
+        # self.analyze_button.enabled = True
+        # self.analyze_open = False
         self.main_window.show()
     
     ics_text = toga.MultilineTextInput(readonly=True, style=Pack(flex=1))
@@ -44,6 +46,8 @@ async def analyze(self, ics1_path, ics2_path, exclusions_path):
     analysis_window.content = main_box
     analysis_window.on_close = close_handler
     analysis_window.show()
+    # self.analyze_button.enabled = False
+    # self.analyze_open = True
     self.main_window.hide()
 
     load_files(self.main_window, ics1_path, ics2_path, exclusions_path, ics_text, excl_text)

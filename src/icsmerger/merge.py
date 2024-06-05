@@ -41,6 +41,8 @@ async def run_merge(self, ics1_path, ics2_path, exclusions_path, all_day):
 
     def close_handler(widget):
         merge_window.close()
+        # self.merge_button.enabled = True
+        # self.merge_open = False
         self.main_window.show()
 
     # Create the merge window
@@ -98,6 +100,8 @@ async def run_merge(self, ics1_path, ics2_path, exclusions_path, all_day):
     merge_window.content = merge_box
     merge_window.on_close = close_handler
     merge_window.show()
+    # self.merge_button.enabled = False
+    # self.merge_open = True
     self.main_window.hide()
 
     # Run the merge

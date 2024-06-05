@@ -22,6 +22,8 @@ class ICSMerger(toga.App):
     def startup(self):
 
         self.platform = platform.system()
+        self.analyze_open = False
+        self.merge_open = False
 
         # Initialize main window
         window_width, window_height = 750, 225
@@ -39,15 +41,15 @@ class ICSMerger(toga.App):
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
 
         # ICS1 file selection
-        ics1_box, self.ics1_entry, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Previous iCal (.ics) file (optional)", "ics1", "ICS1", ["ICS"])
+        ics1_box, self.ics1_entry, self.ics1_clear_button, self.ics1_browse_button, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Previous iCal (.ics) file (optional)", "ics1", "ICS1", ["ICS"])
         main_box.add(ics1_box)
 
         # ICS2 file selection
-        ics2_box, self.ics2_entry, self.ics2_view_button = self.create_file_selection_row("ics2_description", "New iCal (.ics) file", "ics2", "ICS2", ["ICS"])
+        ics2_box, self.ics2_entry, self.ics2_clear_button, self.ics2_browse_button, self.ics2_view_button = self.create_file_selection_row("ics2_description", "New iCal (.ics) file", "ics2", "ICS2", ["ICS"])
         main_box.add(ics2_box)
 
         # Exclusions file selection
-        exclusions_box, self.exclusions_entry, self.exclusions_edit_button = self.create_file_selection_row("exclusions_description", "Exclusions File (optional)", "exclusions", "EXCL", [])
+        exclusions_box, self.exclusions_entry, self.exclusions_clear_button, self.exclusions_browse_button, self.exclusions_edit_button = self.create_file_selection_row("exclusions_description", "Exclusions File (optional)", "exclusions", "EXCL", [])
         main_box.add(exclusions_box)
 
         # All-day event option
@@ -134,7 +136,7 @@ class ICSMerger(toga.App):
         row_box.add(clear_button)
         row_box.add(browse_button)
         row_box.add(view_button)
-        return row_box, entry, view_button
+        return row_box, entry, clear_button, browse_button, view_button
 
     def window_position(self, window_width, window_height):
         screen_width, screen_height = self.screens[0].size
@@ -176,8 +178,10 @@ class ICSMerger(toga.App):
         logging.debug(f"ICS1 Valid: {ics1_valid}")
         logging.debug(f"ICS2 Valid: {ics2_valid}")
         logging.debug(f"EXCL Valid: {exclusions_valid}")
-        self.analyze_button.enabled = ics2_valid
-        self.merge_button.enabled = ics2_valid
+        if not self.analyze_open:
+            self.analyze_button.enabled = ics2_valid
+        if not self.merge_open:
+            self.merge_button.enabled = ics2_valid
         self.ics1_view_button.enabled = ics1_valid
         self.ics2_view_button.enabled = ics2_valid
         if exclusions_valid:
@@ -301,7 +305,7 @@ class ICSMerger(toga.App):
         try:
             with file_path.open('r') as file:
                 content = file.read()
-                await show_content_in_window(self, content, str(file_path))
+            await show_content_in_window(self, content, str(file_path), key)
         except Exception as e:
             self.main_window.error_dialog('Error', f'Failed to open file: {e}')
 
