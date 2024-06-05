@@ -41,15 +41,15 @@ class ICSMerger(toga.App):
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10, flex=1))
 
         # ICS1 file selection
-        ics1_box, self.ics1_entry, self.ics1_clear_button, self.ics1_browse_button, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Previous iCal (.ics) file (optional)", "ics1", "ICS1", ["ICS"])
+        ics1_box, self.ics1_entry, self.ics1_clear_button, self.ics1_browse_button, self.ics1_view_button = self.create_file_selection_row("ics1_description", "Optional: Previous iCal (.ics) file", "ics1", "ICS1", ["ICS"])
         main_box.add(ics1_box)
 
         # ICS2 file selection
-        ics2_box, self.ics2_entry, self.ics2_clear_button, self.ics2_browse_button, self.ics2_view_button = self.create_file_selection_row("ics2_description", "New iCal (.ics) file", "ics2", "ICS2", ["ICS"])
+        ics2_box, self.ics2_entry, self.ics2_clear_button, self.ics2_browse_button, self.ics2_view_button = self.create_file_selection_row("ics2_description", "Required: New iCal (.ics) file", "ics2", "ICS2", ["ICS"])
         main_box.add(ics2_box)
 
         # Exclusions file selection
-        exclusions_box, self.exclusions_entry, self.exclusions_clear_button, self.exclusions_browse_button, self.exclusions_edit_button = self.create_file_selection_row("exclusions_description", "Exclusions File (optional)", "exclusions", "EXCL", [])
+        exclusions_box, self.exclusions_entry, self.exclusions_clear_button, self.exclusions_browse_button, self.exclusions_edit_button = self.create_file_selection_row("exclusions_description", "Optional: Exclusions file", "exclusions", "EXCL", [])
         main_box.add(exclusions_box)
 
         # All-day event option
