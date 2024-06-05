@@ -24,17 +24,17 @@ async def show_content_in_window(self, content, title, key):
     count = 0
     for event in events:
         count += 1
-        events_text += f"Event {count}:\n\tStart:\t\t{event[1]}\n\tEnd:\t\t\t{event[2]}\n\tStamp:\t\t{event[3]}\n\tUID:\t\t\t{event[4]}\n\tSummary:\t{event[0]}\n\tDescription:\t{event[5]}\n"
+        events_text += f"Event {count}:\n\tStart\t\t\t{event[1]}\n\tEnd:\t\t\t{event[2]}\n\tStamp:\t\t\t{event[3]}\n\tUID:\t\t\t{event[4]}\n\tSummary:\t\t{event[0]}\n\tDescription:\t{event[5]}\n"
 
     window_width, window_height = 800, 600
     position_x, position_y = self.window_position(window_width, window_height)
     content_window = toga.Window(title=title, size=(window_width, window_height), position=(position_x, position_y))
     
-    raw_content = toga.MultilineTextInput(value=content, readonly=True, style=Pack(flex=1), placeholder="Empty File.")
+    raw_content = toga.MultilineTextInput(value=content, readonly=True, style=Pack(flex=1, font_family='monospace'), placeholder="Empty File.")
     raw_scroll = toga.ScrollContainer(content=raw_content, style=Pack(flex=1))
     boxed_raw_scroll = toga.Box(style=Pack(flex=1))
     boxed_raw_scroll.add(raw_scroll)
-    formatted_content = toga.MultilineTextInput(value=events_text, readonly=True, style=Pack(flex=1), placeholder="Empty File.")
+    formatted_content = toga.MultilineTextInput(value=events_text, readonly=True, style=Pack(flex=1, font_family='monospace'), placeholder="Empty File.")
 
     formatted_scroll = toga.ScrollContainer(content=formatted_content, style=Pack(flex=1))
     boxed_formatted_scroll = toga.Box(style=Pack(flex=1))
@@ -108,7 +108,7 @@ async def edit_exclusions_window(self, content, file_path):
     position_x, position_y = self.window_position(window_width, window_height)
     exclusions_window = toga.Window(title="Exclusions Editor", size=(window_width, window_height), position=(position_x, position_y))
 
-    text_input = toga.MultilineTextInput(value=content, style=Pack(flex=1), on_change=change_handler, placeholder="Enter one string per line. When matched to an event's Summary, these strings will cause that event to be excluded from the output.")
+    text_input = toga.MultilineTextInput(value=content, style=Pack(flex=1, font_family='monospace'), on_change=change_handler, placeholder="Enter one string per line. When matched to an event's Summary, these strings will cause that event to be excluded from the output.")
 
     async def save_exclusions(widget):
         nonlocal changed
