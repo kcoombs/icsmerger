@@ -12,7 +12,7 @@ from .__init__ import __version__
 from .fileio import open_output_file, sha_check, save_file
 
 # "main" or "dev"
-BRANCH = "dev"
+BRANCH = "main"
 
 async def update_checker(self, type):
     update = Updater(self, __version__, type)
