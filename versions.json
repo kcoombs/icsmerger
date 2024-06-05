@@ -17,5 +17,12 @@
         "shasum": {
             "macos": "df251c9b1ecb127bb54ed7ab31f29f0fc353e78d7e3a036e2c010e8580fe7f30"
         }
+    },
+    {
+        "version": "0.4.0",
+        "shasum": {
+            "windows": "255b3dbbf36bc80fd436ca0e51d7275f53aeee99fdc3ddf2e50fabf96381c0ce",
+            "macos": "c5d10330845d87cd9525688cdae28858a6b8784cfdae0e965cc22c6cd8b0bb8f"
+        }
     }
 ]
