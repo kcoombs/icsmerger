@@ -158,7 +158,7 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
             if unique_events_ics1:
                 remove_text.value += f"Consider manually removing the following events from your calendar.\n\nThey existed in ICS1 but are not in ICS2 and thus may no longer be relevant.\n\nThese event(s) are:\n\n"
                 for event in sorted(unique_events_ics1, key=lambda x: x[1]):
-                    remove_text.value += f"  - {event[0]} on {event[1].date()}\n"
+                    remove_text.value += f"  - '{event[0]}' ({event[1].date()})\n"
             else:
                 remove_text.value += "No suggested removals from the current calendar were found in ICS1."
         else:
@@ -168,7 +168,7 @@ def merge(merge_window, ics1_path, ics2_path, exclusions_path, excl_text, remove
         if unique_events_ics2:
             merge_text.value += f"There are {len(unique_events_ics2)} new event(s) in ICS2 that do not exist in ICS1.\n\nThese event(s) are:\n\n"
             for event in sorted(unique_events_ics2, key=lambda x: x[1]):
-                merge_text.value += f"  - {event[0]} on {event[1].date()}\n"
+                merge_text.value += f"  - '{event[0]}' ({event[1].date()})\n"
         else:
             merge_text.value += "No new events were found in ICS2.\n"
 
