@@ -48,6 +48,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+windows/
 
 # IntelliJ Idea family of suites
 .idea

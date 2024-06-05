@@ -1,3 +1,5 @@
+import logging
+
 # Load exclusions from file
 def load_exclusions(main_window, file_path):
     try:
@@ -18,14 +20,14 @@ def filter_exclusions(events, exclusions):
             excluded_events.add(event)
     return filtered_events, excluded_events
 
-def print_exclusions(exclusions, excl):
+def print_exclusions(exclusions, excl, file):
     count = 0
     text = ""
+    excl.value += f"\nExcluded from {file}:\n\n"
     for event in exclusions:
-        text += f"  - {event[0]} on {event[1].date()}\n"
+        text += f"  - '{event[0]}' ({event[1].date()})\n"
         count += 1
     if count == 0:
-        excl.value += "Nothing Excluded."
+        excl.value += "  - Nothing Excluded.\n\n"
     else:
-        excl.value += "Excluded:\n\n"
         excl.value += f"{text}"
