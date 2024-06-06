@@ -24,5 +24,12 @@
             "windows": "255b3dbbf36bc80fd436ca0e51d7275f53aeee99fdc3ddf2e50fabf96381c0ce",
             "macos": "c5d10330845d87cd9525688cdae28858a6b8784cfdae0e965cc22c6cd8b0bb8f"
         }
+    },
+    {
+        "version": "0.5.0",
+        "shasum": {
+            "windows": "",
+            "macos": ""
+        }
     }
 ]
