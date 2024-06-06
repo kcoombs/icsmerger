@@ -51,7 +51,7 @@ async def update_checker(self, type):
 class Updater():
     branches = {
         "main" : "main",
-        "dev" : "icsmerge-dev"
+        "dev" : "icsmerger-dev"
     }
     version_base_url = "https://raw.githubusercontent.com/kcoombs/icsmerger"
     version_file = "versions.json"
@@ -191,15 +191,41 @@ class Updater():
 
             # If download was successful, check the version
             if response.status_code == 200:
+                
+                ## FOR TESTING ##
+                # self.platform = "windows"
+                # self.platform = "macos"
+                # self.platform = "linux"
+                #################
+
+                def find_release(versions, index):
+                    try:
+                        self.server_version = versions[index]['version']
+                        self.sha256 = versions[index]['shasum'][self.platform]
+                        return True
+                    except KeyError:
+                        logging.error(f"Found version {self.server_version}, but no release found for {self.platform}")
+                        find_release(versions, (index - 1))
+                    except IndexError:
+                        logging.error(f"No release for '{self.platform}' found in {Updater.version_file}.")
+                        return False
+                
                 versions = json.loads(response.text)
-                self.server_version = versions[-1]['version']
-                self.sha256 = versions[-1]['shasum'][self.platform]
+
+                release_available = find_release(versions, -1)
+                
+                if not release_available:
+                    self.check_success = False
+                    self.message = "No release found for this platform."
+                    logging.error(self.message)
+                    return
+
                 logging.info(f"Local version: {self.local_version}, Server version: {self.server_version}, Server sha256: {self.sha256}")
 
                 ## FOR TESTING ##
                 # self.local_version="0.0.9"
                 # self.server_version="0.2.0"
-                ## FOR TESTING ##
+                #################
 
                 # If the server version is newer, download the update
                 if self.server_version > self.local_version:
