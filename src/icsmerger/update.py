@@ -223,7 +223,7 @@ class Updater():
                 logging.info(f"Local version: {self.local_version}, Server version: {self.server_version}, Server sha256: {self.sha256}")
 
                 ## FOR TESTING ##
-                # self.local_version="0.0.9"
+                # self.local_version="0.4.0"
                 # self.server_version="0.2.0"
                 #################
 
@@ -369,12 +369,14 @@ class UpdaterUI():
         return result
 
     def start_progress(self, size):
-        self.progress_bar.max = size
+        self.max_size = size
+        self.progress_bar.max = 100
         self.progress_bar.start()
         return
     
     def update_progress(self, size):
-        self.progress_bar.value = size
+        reported_size = size / self.max_size * 100
+        self.progress_bar.value = reported_size
         return
     
     def stop_progress(self):
