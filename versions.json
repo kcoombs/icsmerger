@@ -28,8 +28,8 @@
     {
         "version": "0.5.0",
         "shasum": {
-            "windows": "",
-            "macos": ""
+            "windows": "0428854389879ba9899246c512c69ae92d1745fe30bbd6a9ff4392a903a5a269",
+            "macos": "dbe167c37a3881245429aedb0c1565ce425641d1bf915e208490e5368a1cc972"
         }
     }
 ]
