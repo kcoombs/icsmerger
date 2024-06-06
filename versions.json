@@ -31,5 +31,12 @@
             "windows": "0428854389879ba9899246c512c69ae92d1745fe30bbd6a9ff4392a903a5a269",
             "macos": "dbe167c37a3881245429aedb0c1565ce425641d1bf915e208490e5368a1cc972"
         }
+    },
+    {
+        "version": "0.5.1",
+        "shasum": {
+            "windows": "1b5d542cd890fddea3fdb181e57b10804801b650afe15608462189ba86984ff0",
+            "macos": "f4802a75c24723c4d4fd6279cb1284b17b14e7048f8c52c37c064d87630e87fe"
+        }
     }
 ]
