@@ -1,0 +1,11 @@
+For V1:
+
+- Add overlap check for suggested removals——If a suggested removal is on a date not covered by ICS2, don't suggest it.
+- Flesh out the icon sets
+- Add menu item to enable/disable automatic updates
+- Documentation
+- Possibly add clearing out of paths (pyproject.toml, cleanup_paths)
+- Removed cached out.ics
+
+For V2:
+- Add MS Graph support
