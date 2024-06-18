@@ -275,7 +275,7 @@ class ICSMerger(toga.App):
 
     async def save_configuration(self, widget):
             """
-            Creates a configuration dictionary, and intiates a configureatino file save.
+            Creates a configuration dictionary, and initiates a configuration file save.
 
             Args:
                 widget: The widget triggering the save action.
@@ -325,7 +325,7 @@ class ICSMerger(toga.App):
             return
 
 def main():
-    return ICSMerger(f"{gui_descriptions["root_title"]} ({__version__})")
+    return ICSMerger(f"{gui_descriptions["root_title"]}")
 
 if __name__ == '__main__':
     main().main_loop()
